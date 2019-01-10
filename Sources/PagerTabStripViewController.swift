@@ -62,6 +62,10 @@ open class PagerTabStripViewController: UIViewController, UIScrollViewDelegate {
     open private(set) var currentIndex = 0
     open private(set) var preCurrentIndex = 0 // used *only* to store the index to which move when the pager becomes visible
 
+    public func setCurrentTabIndex(index: Int){
+        self.currentIndex = index
+    }
+
     open var pageWidth: CGFloat {
         return containerView.bounds.width
     }
