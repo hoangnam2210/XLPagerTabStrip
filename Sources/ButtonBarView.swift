@@ -50,6 +50,12 @@ open class ButtonBarView: UICollectionView {
         bar.layer.zPosition = 9999
         return bar
     }()
+    
+    internal var selectedBarWidth: CGFloat? {
+        didSet {
+            updateSelectedBarPosition(false, swipeDirection: .none, pagerScroll: .scrollOnlyIfOutOfScreen)
+        }
+    }
 
     internal var selectedBarHeight: CGFloat = 4 {
         didSet {
@@ -59,8 +65,6 @@ open class ButtonBarView: UICollectionView {
     var selectedBarVerticalAlignment: SelectedBarVerticalAlignment = .bottom
     var selectedBarAlignment: SelectedBarAlignment = .center
     var selectedIndex = 0
-    var selectedCellFrame: CGRect? = nil
-    var selectedCellWidth: CGFloat? = nil
 
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -95,19 +99,20 @@ open class ButtonBarView: UICollectionView {
             }
         } else {
             toFrame = layoutAttributesForItem(at: IndexPath(item: toIndex, section: 0))!.frame
-            
         }
 
         var targetFrame = fromFrame
-        
         targetFrame.size.height = selectedBar.frame.size.height
-        targetFrame.origin.x += (toFrame.origin.x - fromFrame.origin.x) * progressPercentage
-        if (selectedCellWidth != nil) {
-            targetFrame.origin.x += ((selectedCellFrame?.size.width ?? selectedBar.frame.size.width) / 2) - (selectedCellWidth! / 2)
-            targetFrame.size.width = selectedCellWidth!
+        
+        if let selectedBarWidth = selectedBarWidth {
+            targetFrame.size.width = selectedBarWidth
+            targetFrame.origin.x = fromFrame.origin.x + (fromFrame.size.width - selectedBarWidth) / 2
+            targetFrame.origin.x += ((toFrame.origin.x + (toFrame.size.width - selectedBarWidth) / 2) - targetFrame.origin.x) * progressPercentage
+        } else {
+            targetFrame.size.width += (toFrame.size.width - fromFrame.size.width) * progressPercentage
+            targetFrame.origin.x += (toFrame.origin.x - fromFrame.origin.x) * progressPercentage
         }
-        
-        
+
         selectedBar.frame = CGRect(x: targetFrame.origin.x, y: selectedBar.frame.origin.y, width: targetFrame.size.width, height: selectedBar.frame.size.height)
 
         var targetContentOffset: CGFloat = 0.0
@@ -127,16 +132,15 @@ open class ButtonBarView: UICollectionView {
         let selectedCellIndexPath = IndexPath(item: selectedIndex, section: 0)
         let attributes = layoutAttributesForItem(at: selectedCellIndexPath)
         let selectedCellFrame = attributes!.frame
-        self.selectedCellFrame = selectedCellFrame
 
         updateContentOffset(animated: animated, pagerScroll: pagerScroll, toFrame: selectedCellFrame, toIndex: (selectedCellIndexPath as NSIndexPath).row)
 
-        selectedBarFrame.size.width = selectedCellFrame.size.width
-        selectedBarFrame.origin.x = selectedCellFrame.origin.x
-        
-        if (selectedCellWidth != nil) {
-            selectedBarFrame.origin.x += ((selectedCellFrame.size.width) / 2) - (selectedCellWidth! / 2)
-            selectedBarFrame.size.width = selectedCellWidth!
+        if let selectedBarWidth = selectedBarWidth {
+            selectedBarFrame.size.width = selectedBarWidth
+            selectedBarFrame.origin.x = selectedCellFrame.origin.x + (selectedCellFrame.size.width - selectedBarWidth) / 2
+        } else {
+            selectedBarFrame.size.width = selectedCellFrame.size.width
+            selectedBarFrame.origin.x = selectedCellFrame.origin.x
         }
 
         if animated {
@@ -193,11 +197,7 @@ open class ButtonBarView: UICollectionView {
         case .bottom:
             selectedBarFrame.origin.y = frame.size.height - selectedBarHeight
         }
-        
-        if (selectedCellWidth != nil) {
-            selectedBarFrame.size.width = selectedCellWidth!
-        }
-        
+
         selectedBarFrame.size.height = selectedBarHeight
         selectedBar.frame = selectedBarFrame
     }
@@ -205,9 +205,5 @@ open class ButtonBarView: UICollectionView {
     override open func layoutSubviews() {
         super.layoutSubviews()
         updateSelectedBarYPosition()
-    }
-    
-    public func setSelectedCellWidth(selectedCellWidth: CGFloat){
-        self.selectedCellWidth = selectedCellWidth
     }
 }
